@@ -1,0 +1,5 @@
+device: h616-x96-mate
+kernel: 6.1.123
+rootfs: openwrt-23.05.5-vanila-armsr-armv8-generic-ext4-rootfs.img.gz
+size: 1024
+output: out/h616-openwrt.img

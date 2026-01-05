@@ -1,0 +1,17 @@
+version: "1.0"
+
+repositories:
+  data:
+    type: github
+    url: https://github.com/bobbyunknown/Oh-my-builder
+    branch: data
+    path: ""
+    cache_ttl: 86400
+    description: "Centralized firmware data repository with Git LFS support"
+    components:
+      kernels: "kernels/"
+      rootfs: "rootfs/"
+      firmware: "firmware/"
+      devices: "devices/"
+      loader: "loader/"
+      patch: "patch/"

@@ -1,0 +1,10 @@
+# Oh-my-builder
+
+*.img
+*.img.gz
+*.tar.gz
+.cache/
+/omb
+configs/*.yaml
+!configs/config.yaml
+out/
