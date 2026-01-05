@@ -154,6 +154,23 @@ jobs:
           
           echo "✓ Loaders synced"
       
+      - name: Sync Patches
+        run: |
+          echo "Syncing patches from ULO-Builder..."
+          
+          REPO="armarchindo/ULO-Builder"
+          
+          rm -rf patch
+          git clone --depth 1 --filter=blob:none --sparse https://github.com/${REPO}.git temp_patch
+          cd temp_patch
+          git sparse-checkout set patch
+          cd ..
+          
+          mv temp_patch/patch ./patch
+          rm -rf temp_patch
+          
+          echo "✓ Patches synced"
+      
       - name: Commit and Push
         run: |
           git add -A
