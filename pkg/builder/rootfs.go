@@ -69,16 +69,13 @@ func (b *Builder) InstallRootfs() error {
 	}
 	defer f.Close()
 
-	// Calculate partition offset (partition 2 starts at sector 526336)
 	partitionOffset := int64(526336 * 512)
 	partitionSize := int64(2127872 * 512)
 
-	// Seek to partition start
 	if _, err := f.Seek(partitionOffset, 0); err != nil {
 		return fmt.Errorf("failed to seek to partition: %w", err)
 	}
 
-	// Create ext4 filesystem on partition using pilat/go-ext4fs
 	if err := b.writeRootfsWithExt4fs(f, partitionSize, rootfsDir); err != nil {
 		return fmt.Errorf("failed to write rootfs: %w", err)
 	}

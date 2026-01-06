@@ -63,11 +63,10 @@ func (b *Builder) InstallKernel() error {
 	}
 	fmt.Println("   ✓ Extracted kernel modules")
 
-	if err := b.createModuleSymlinks(modulesDir, b.Config.Kernel); err != nil {
-		return fmt.Errorf("failed to create module symlinks: %w", err)
+	if err := b.copyModulesToRoot(modulesDir, b.Config.Kernel); err != nil {
+		return fmt.Errorf("failed to copy modules to root: %w", err)
 	}
-	fmt.Println("   ✓ Created kernel module symlinks")
-
+	fmt.Println("   ✓ Copied modules to root directory")
 	if err := b.extractDeviceFiles(bootDir); err != nil {
 		return fmt.Errorf("failed to extract device files: %w", err)
 	}

@@ -29,6 +29,11 @@ func (b *Builder) writeRootfsWithExt4fs(partition io.ReadWriteSeeker, size int64
 	if err := img.Save(); err != nil {
 		return fmt.Errorf("failed to save filesystem: %w", err)
 	}
+	img.Close()
+
+	if err := SetExt4Label(tmpImg, "ROOTFS"); err != nil {
+		return fmt.Errorf("failed to set volume label: %w", err)
+	}
 
 	imgFile, err := os.Open(tmpImg)
 	if err != nil {
@@ -52,7 +57,12 @@ func (b *Builder) copyDirToExt4fs(img *ext4fs.Image, srcDir string, parentInode 
 	for _, entry := range entries {
 		srcPath := filepath.Join(srcDir, entry.Name())
 
-		if entry.IsDir() {
+		fileInfo, err := os.Lstat(srcPath)
+		if err != nil {
+			continue
+		}
+
+		if fileInfo.IsDir() {
 			inode, err := img.CreateDirectory(parentInode, entry.Name(), 0755, 0, 0)
 			if err != nil {
 				fmt.Printf("   Warning: Could not create directory %s: %v\n", entry.Name(), err)
@@ -61,25 +71,15 @@ func (b *Builder) copyDirToExt4fs(img *ext4fs.Image, srcDir string, parentInode 
 			if err := b.copyDirToExt4fs(img, srcPath, inode); err != nil {
 				return err
 			}
-		} else if entry.Type()&os.ModeSymlink != 0 {
-			link, err := os.Readlink(srcPath)
-			if err != nil {
-				continue
-			}
-			_, err = img.CreateSymlink(parentInode, entry.Name(), link, 0, 0)
-			if err != nil {
-				fmt.Printf("   Warning: Could not create symlink %s: %v\n", entry.Name(), err)
-			}
 		} else {
 			data, err := os.ReadFile(srcPath)
 			if err != nil {
 				continue
 			}
 
-			info, _ := entry.Info()
 			mode := uint16(0644)
-			if info != nil {
-				mode = uint16(info.Mode() & 0777)
+			if fileInfo != nil {
+				mode = uint16(fileInfo.Mode() & 0777)
 			}
 
 			if _, err := img.CreateFile(parentInode, entry.Name(), data, mode, 0, 0); err != nil {
