@@ -2,7 +2,9 @@ package omb
 
 import (
 	"fmt"
+	"log"
 
+	"github.com/bobbyunknown/Oh-my-builder/pkg/download"
 	"github.com/bobbyunknown/Oh-my-builder/pkg/repo"
 	"github.com/spf13/cobra"
 )
@@ -29,7 +31,15 @@ func runUpdate(cmd *cobra.Command, args []string) {
 	fmt.Println("🔄 Updating repository indexes...")
 	fmt.Println()
 
-	indexer := repo.NewIndexer("bobbyunknown", "Oh-my-builder", "data")
+	repoCfg, err := repo.LoadDataRepo("configs/config.yaml")
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
+	}
+	owner, name, err := repo.ParseRepoURL(repoCfg.URL)
+	if err != nil {
+		log.Fatalf("Failed to parse repo url: %v", err)
+	}
+	indexer := repo.NewIndexer(owner, name, repoCfg.Branch, repoCfg.Components)
 
 	fmt.Print("   Fetching kernels...     ")
 	kernels, err := indexer.FetchKernelIndex()
@@ -53,6 +63,14 @@ func runUpdate(cmd *cobra.Command, args []string) {
 		fmt.Printf("❌ Error: %v\n", err)
 	} else {
 		fmt.Printf("✓ Found %d devices\n", len(devices.Devices))
+	}
+
+	fmt.Print("   Fetching patch...       ")
+	patches, err := indexer.FetchPatchIndex()
+	if err != nil {
+		fmt.Printf("❌ Error: %v\n", err)
+	} else {
+		fmt.Printf("✓ Found %d patches\n", len(patches.Patches))
 	}
 
 	fmt.Println()
@@ -85,6 +103,22 @@ func runUpdate(cmd *cobra.Command, args []string) {
 		}
 	}
 
+	if patches != nil {
+		fmt.Print("   patch.yaml              ")
+		if err := repo.SaveIndex("configs/patch.yaml", patches); err != nil {
+			fmt.Printf("❌ Error: %v\n", err)
+		} else {
+			fmt.Println("✓ Saved")
+		}
+	}
+
 	fmt.Println()
 	fmt.Println("✨ Repository indexes updated successfully!")
+
+	dm, err := download.NewManager()
+	if err == nil {
+		if err := dm.ValidateCache(); err != nil {
+			fmt.Printf("Warning: cache validation failed: %v\n", err)
+		}
+	}
 }

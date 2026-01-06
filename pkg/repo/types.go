@@ -19,6 +19,12 @@ type DeviceIndex struct {
 	Path   string `yaml:"path"`
 }
 
+type PatchIndex struct {
+	Name string `yaml:"name"`
+	Size int64  `yaml:"size"`
+	Path string `yaml:"path"`
+}
+
 type IndexMetadata struct {
 	Generated string `yaml:"generated"`
 	Source    string `yaml:"source"`
@@ -37,4 +43,9 @@ type RootfsYAML struct {
 type DevicesYAML struct {
 	Metadata IndexMetadata `yaml:"metadata"`
 	Devices  []DeviceIndex `yaml:"devices"`
+}
+
+type PatchesYAML struct {
+	Metadata IndexMetadata `yaml:"metadata"`
+	Patches  []PatchIndex  `yaml:"patches"`
 }

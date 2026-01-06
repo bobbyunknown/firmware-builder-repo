@@ -19,6 +19,7 @@ kernel: 6.1.123
 rootfs: openwrt-23.05.5-vanila-armsr-armv8-generic-ext4-rootfs.img.gz
 size: 1024
 output: out/h616-openwrt.img
+patch: startup.tar.xz
 ```
 
 Build using the profile:
@@ -37,7 +38,8 @@ Build directly with command-line flags:
   --kernel 6.1.123 \
   --rootfs openwrt-23.05.5-vanila.img.gz \
   --size 1024 \
-  --output out/custom.img
+  --output out/custom.img \
+  --patch startup.tar.xz
 ```
 
 ### 3. Interactive Mode (Coming Soon)
@@ -79,7 +81,8 @@ The build process follows these steps:
   -k 6.1.123 \
   -r openwrt-23.05.5.img.gz \
   -s 2048 \
-  -o out/rk3588.img
+  -o out/rk3588.img \
+  --patch startup.tar.xz
 ```
 
 ### Build for Amlogic S905x3

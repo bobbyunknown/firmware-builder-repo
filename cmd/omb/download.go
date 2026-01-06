@@ -37,7 +37,10 @@ func init() {
 func runDownloadKernel(cmd *cobra.Command, args []string) {
 	version := args[0]
 
-	dm := download.NewManager(".cache", "bobbyunknown", "Oh-my-builder", "data")
+	dm, err := download.NewManager()
+	if err != nil {
+		log.Fatalf("Failed to create download manager: %v", err)
+	}
 
 	if err := dm.DownloadKernel(version); err != nil {
 		log.Fatalf("Failed to download kernel: %v", err)
@@ -49,7 +52,10 @@ func runDownloadKernel(cmd *cobra.Command, args []string) {
 func runDownloadRootfs(cmd *cobra.Command, args []string) {
 	name := args[0]
 
-	dm := download.NewManager(".cache", "bobbyunknown", "Oh-my-builder", "data")
+	dm, err := download.NewManager()
+	if err != nil {
+		log.Fatalf("Failed to create download manager: %v", err)
+	}
 
 	if err := dm.DownloadRootfs(name); err != nil {
 		log.Fatalf("Failed to download rootfs: %v", err)

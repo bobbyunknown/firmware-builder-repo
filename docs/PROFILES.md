@@ -12,6 +12,7 @@ kernel: <kernel-version>
 rootfs: <rootfs-filename>
 size: <image-size-mb>
 output: <output-path>
+patch: <patch-archive-or-false>
 ```
 
 ## Fields
@@ -83,6 +84,15 @@ Output file path. If not specified, defaults to `out/<device-name>.img`.
 output: out/custom-name.img
 ```
 
+### patch (optional)
+
+Set to `false` to skip patching, or set to a patch archive filename from `configs/patch.yaml`.
+
+**Example:**
+```yaml
+patch: startup.tar.xz
+```
+
 ## Example Profiles
 
 ### Allwinner H616 - OpenWrt
@@ -93,6 +103,7 @@ kernel: 6.1.123
 rootfs: openwrt-23.05.5-vanila-armsr-armv8-generic-ext4-rootfs.img.gz
 size: 1024
 output: out/h616-openwrt.img
+patch: startup.tar.xz
 ```
 
 ### Rockchip RK3588 - OpenWrt
@@ -103,6 +114,7 @@ kernel: 6.1.123
 rootfs: openwrt-23.05.5-vanila-armsr-armv8-generic-ext4-rootfs.img.gz
 size: 2048
 output: out/rk3588-openwrt.img
+patch: false
 ```
 
 ### Amlogic S905x3 - OpenWrt
@@ -113,6 +125,7 @@ kernel: 5.4.279
 rootfs: openwrt-23.05.5-vanila-armsr-armv8-generic-ext4-rootfs.img.gz
 size: 1024
 output: out/s905x3-openwrt.img
+patch: false
 ```
 
 ### Allwinner H618 - Custom Rootfs
@@ -123,6 +136,7 @@ kernel: 6.6.6-AW64-DBAI
 rootfs: OpenWrt-23.05.5-ALKHANET-armsr-armv8-generic-rootfs.tar.gz
 size: 2048
 output: out/h618-alkhanet.img
+patch: false
 ```
 
 ## Profile Validation

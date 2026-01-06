@@ -3,3 +3,4 @@ kernel: 5.4.279
 rootfs: openwrt-23.05.5-vanila-armsr-armv8-generic-ext4-rootfs.img.gz
 size: 1024
 output: out/s905x3-openwrt.img
+patch: false

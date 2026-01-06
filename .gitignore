@@ -8,3 +8,5 @@
 configs/*.yaml
 !configs/config.yaml
 out/
+tmp/
+logs/

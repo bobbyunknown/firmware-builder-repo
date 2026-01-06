@@ -1,0 +1,6 @@
+device: h618-orangepi-zero3
+kernel: 6.6.6-AW64-DBAI
+rootfs: OpenWrt-23.05.5-InsomWRT-armsr-armv8-generic-rootfs.tar.gz
+size: 1024
+output: out/opiz3-openwrt.img
+patch: startup.tar.xz

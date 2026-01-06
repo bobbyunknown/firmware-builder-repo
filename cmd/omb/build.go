@@ -24,6 +24,7 @@ var (
 	rootfsFlag  string
 	sizeFlag    int
 	outputFlag  string
+	patchFlag   string
 )
 
 func init() {
@@ -35,6 +36,7 @@ func init() {
 	buildCmd.Flags().StringVarP(&rootfsFlag, "rootfs", "r", "", "Rootfs file")
 	buildCmd.Flags().IntVarP(&sizeFlag, "size", "s", 1024, "Image size in MB")
 	buildCmd.Flags().StringVarP(&outputFlag, "output", "o", "", "Output file path")
+	buildCmd.Flags().StringVar(&patchFlag, "patch", "", "Patch archive name")
 }
 
 func runBuild(cmd *cobra.Command, args []string) {

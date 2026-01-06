@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bobbyunknown/Oh-my-builder/pkg/config"
 	"github.com/bobbyunknown/Oh-my-builder/pkg/download"
 	"github.com/diskfs/go-diskfs"
 	"github.com/diskfs/go-diskfs/disk"
@@ -30,6 +31,13 @@ type Builder struct {
 func NewBuilder(config BuildConfig, cacheDir string) (*Builder, error) {
 	tempDir := filepath.Join("tmp", "build")
 	workDir := filepath.Join(tempDir, "work")
+
+	if _, err := os.Stat(tempDir); err == nil {
+		fmt.Println("Cleaning up previous build directory...")
+		if err := os.RemoveAll(tempDir); err != nil {
+			return nil, fmt.Errorf("cleanup previous build: %w", err)
+		}
+	}
 
 	if err := os.MkdirAll(workDir, 0755); err != nil {
 		return nil, fmt.Errorf("create work directory: %w", err)
@@ -80,7 +88,10 @@ func (b *Builder) Build() error {
 func (b *Builder) Validate() error {
 	fmt.Println("Checking resources...")
 
-	dm := download.NewManager(b.CacheDir, "bobbyunknown", "Oh-my-builder", "data")
+	dm, err := download.NewManager()
+	if err != nil {
+		return fmt.Errorf("failed to create download manager: %w", err)
+	}
 
 	kernelPath := dm.GetKernelPath(b.Config.Kernel)
 	if _, err := os.Stat(kernelPath); os.IsNotExist(err) {
@@ -109,11 +120,16 @@ func (b *Builder) CreateImage() error {
 	fmt.Println("💾 Creating disk image...")
 
 	imagePath := b.Config.Output
-	imageSize := int64(b.Config.Size) * 1024 * 1024
+	// Total image = 16MB (bootloader space) + 256MB (boot partition) + rootfs size
+	// This matches ulo script: fallocate -l $((16 + 256 + rootsize))M
+	imageSize := int64(16+256+b.Config.Size) * 1024 * 1024
 
 	if err := os.MkdirAll(filepath.Dir(imagePath), 0755); err != nil {
 		return fmt.Errorf("failed to create output directory: %w", err)
 	}
+
+	// Remove existing image if it exists, ignore error if it doesn't exist
+	os.Remove(imagePath)
 
 	mydisk, err := diskfs.Create(imagePath, imageSize, diskfs.SectorSizeDefault)
 	if err != nil {
@@ -142,13 +158,13 @@ func (b *Builder) CreateImage() error {
 	}
 
 	fmt.Println("   Formatting boot partition (FAT32)...")
-	spec := disk.FilesystemSpec{
+	_, err = mydisk.CreateFilesystem(disk.FilesystemSpec{
 		Partition:   1,
 		FSType:      filesystem.TypeFat32,
 		VolumeLabel: "BOOT",
-	}
-	if _, err := mydisk.CreateFilesystem(spec); err != nil {
-		return fmt.Errorf("failed to format boot partition: %w", err)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create boot filesystem: %w", err)
 	}
 
 	fmt.Println("   ✓ Disk image created with partitions")
@@ -156,69 +172,33 @@ func (b *Builder) CreateImage() error {
 	return nil
 }
 
-func (b *Builder) InstallKernel() error {
-	fmt.Println("🔧 Installing kernel...")
-
-	dm := download.NewManager(b.CacheDir, "bobbyunknown", "Oh-my-builder", "data")
-	kernelDir := dm.GetKernelPath(b.Config.Kernel)
-
-	mydisk, err := diskfs.Open(b.Config.Output)
-	if err != nil {
-		return fmt.Errorf("failed to open disk image: %w", err)
-	}
-
-	fs, err := mydisk.GetFilesystem(1)
-	if err != nil {
-		return fmt.Errorf("failed to get boot filesystem: %w", err)
-	}
-
-	files, err := os.ReadDir(kernelDir)
-	if err != nil {
-		return fmt.Errorf("failed to read kernel directory: %w", err)
-	}
-
-	for _, file := range files {
-		if !file.IsDir() && filepath.Ext(file.Name()) == ".gz" {
-			fmt.Printf("   Extracting %s...\n", file.Name())
-			srcPath := filepath.Join(kernelDir, file.Name())
-
-			data, err := os.ReadFile(srcPath)
-			if err != nil {
-				return fmt.Errorf("failed to read %s: %w", file.Name(), err)
-			}
-
-			destPath := "/" + file.Name()
-			if err := fs.Mkdir(destPath); err == nil {
-			}
-
-			rw, err := fs.OpenFile(destPath, os.O_CREATE|os.O_RDWR)
-			if err != nil {
-				fmt.Printf("   Warning: failed to write %s: %v\n", file.Name(), err)
-				continue
-			}
-
-			if _, err := rw.Write(data); err != nil {
-				fmt.Printf("   Warning: failed to write data to %s: %v\n", file.Name(), err)
-			}
-		}
-	}
-
-	fmt.Println("   ✓ Kernel installed")
-	return nil
-}
-
-func (b *Builder) InstallRootfs() error {
-	fmt.Println("📦 Installing rootfs...")
-	fmt.Println("   Note: Rootfs installation requires mounting partition")
-	fmt.Println("   Skipping for now - will be implemented with OS mount tools")
-	return nil
-}
-
 func (b *Builder) WriteBootloader() error {
 	fmt.Println("🚀 Writing bootloader...")
-	fmt.Println("   Note: Bootloader writing requires vendor-specific u-boot files")
-	fmt.Println("   Skipping for now - will be implemented with loader files")
-	return nil
+
+	vendor, err := config.GetDeviceVendor(b.Config.Device)
+	if err != nil {
+		return fmt.Errorf("failed to detect vendor: %w", err)
+	}
+
+	dm, err := download.NewManager()
+	if err != nil {
+		return fmt.Errorf("failed to create download manager: %w", err)
+	}
+
+	if err := dm.DownloadLoader(vendor, b.Config.Device); err != nil {
+		return fmt.Errorf("failed to download loader: %w", err)
+	}
+
+	switch vendor {
+	case "amlogic":
+		return b.writeAmlogicBootloader()
+	case "allwinner":
+		return b.writeAllwinnerBootloader()
+	case "rockchip":
+		return b.writeRockchipBootloader()
+	default:
+		return fmt.Errorf("unsupported vendor: %s", vendor)
+	}
 }
 
 func (b *Builder) Cleanup() error {

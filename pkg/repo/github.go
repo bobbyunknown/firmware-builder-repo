@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 )
 
 type GitHubClient struct {
@@ -62,23 +61,4 @@ func (c *GitHubClient) ListContents(path string) ([]GitHubContent, error) {
 	}
 
 	return contents, nil
-}
-
-func detectSOC(name string) string {
-	name = strings.ToLower(name)
-
-	if strings.Contains(name, "s905") {
-		return "amlogic"
-	}
-	if strings.Contains(name, "rk3") || strings.Contains(name, "rockchip") {
-		return "rockchip"
-	}
-	if strings.Contains(name, "h6") || strings.Contains(name, "h616") ||
-		strings.Contains(name, "h618") || strings.Contains(name, "h313") ||
-		strings.Contains(name, "a64") || strings.Contains(name, "h5") ||
-		strings.Contains(name, "aw64") {
-		return "allwinner"
-	}
-
-	return "unknown"
 }
